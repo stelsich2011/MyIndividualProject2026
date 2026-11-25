@@ -125,8 +125,8 @@ class KeysTests(unittest.TestCase):
         self.assertEqual(key['default_variant'], '01')
         self.assertEqual(key['variants']['01']['1']['accepted'], ['007', '-0,5'])
 
-    def test_missing_duplicate_and_bad_points_report_errors(self):
-        for rows in [self.rows()[:-1], self.rows() + [self.rows()[1]], self.rows()[:1] + [['1', '1', '7', '1.5']]]:
+    def test_empty_duplicate_and_bad_points_report_errors(self):
+        for rows in [self.rows()[:1], self.rows() + [self.rows()[1]], self.rows()[:1] + [['1', '1', '7', '1.5']]]:
             with self.assertRaises(ValueError):
                 key_from_rows(rows)
 

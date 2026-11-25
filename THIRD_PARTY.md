@@ -12,6 +12,7 @@
 | OpenCV Python | Apache 2.0 |
 | NumPy | Набор лицензий BSD-3-Clause, 0BSD, MIT, Zlib, CC0-1.0 |
 | Pillow | MIT-CMU |
+| PySide6 / Qt | LGPLv3 / GPLv3 или коммерческая лицензия, в зависимости от компонента |
 | openpyxl | MIT |
 | PyInstaller | GPLv2-or-later со специальным исключением для сборок |
 

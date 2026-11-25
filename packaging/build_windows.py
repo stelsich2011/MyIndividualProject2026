@@ -44,10 +44,10 @@ def main():
                     '--workpath', 'build/windows', 'packaging/OGEChecker.spec'], env=environment, check=True)
     subprocess.run([str(compiler), 'packaging/OGEChecker.iss'], check=True)
     import importlib.metadata
-    manifest = {'version': '0.6.0', 'python': sys.version, 'platform': platform.platform(), 'numeric_model':numeric_metadata,
+    manifest = {'version': '0.8.0b0', 'display_version': 'Beta-0.8.0', 'python': sys.version, 'platform': platform.platform(), 'numeric_model':numeric_metadata,
         'alignment_reference':alignment_metadata,
         'model': filename, 'model_sha256': hashlib.sha256(model.read_bytes()).hexdigest(), 'ocr_profile': profile,
-        'dependencies': {p: importlib.metadata.version(p) for p in ['rapidocr', 'onnxruntime', 'opencv-python-headless', 'PyMuPDF', 'numpy', 'Pillow', 'openpyxl', 'pyinstaller']}}
+        'dependencies': {p: importlib.metadata.version(p) for p in ['rapidocr', 'onnxruntime', 'opencv-python-headless', 'PyMuPDF', 'numpy', 'PySide6', 'openpyxl', 'pyinstaller']}}
     (root / 'dist/installer/build_manifest.json').write_text(json.dumps(manifest, indent=2), encoding='utf-8')
     (root / 'packaging/requirements-windows.lock.txt').write_text('\n'.join(f'{p}=={v}' for p, v in manifest['dependencies'].items()) + '\n', encoding='utf-8')
 

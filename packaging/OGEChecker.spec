@@ -8,6 +8,8 @@ model = Path(os.environ['OGE_RELEASE_MODEL'])
 if not model.is_file():
     raise RuntimeError('Не найдена модель для автономной поставки')
 datas = [(str(project / 'src' / 'oge_checker' / 'review.js'), 'oge_checker'),
+         (str(project / 'src/oge_checker/qml'), 'oge_checker/qml'),
+         (str(project / 'src/oge_checker/config'), 'oge_checker/config'),
          (str(project / 'src' / 'oge_checker' / 'ocr_profile.json'), 'oge_checker'),
          (str(model), 'oge_checker/models')]
 for filename in ('digits_svm.xml','digits_neighbors.npz','numeric_model.json','form_anchors.npz','form_anchors.json'):
@@ -27,7 +29,7 @@ for package in ['rapidocr', 'onnxruntime', 'pymupdf', 'openpyxl']:
 
 analysis = Analysis([str(project / 'scripts' / 'desktop_entry.py')], pathex=[str(project / "src")],
                     binaries=binaries, datas=datas, hiddenimports=hiddenimports,
-                    excludes=['pytest', 'matplotlib', 'pandas', 'torch', 'tensorflow'])
+                    excludes=['pytest', 'matplotlib', 'pandas', 'torch', 'tensorflow', 'tkinter', 'PySide6.QtWebEngineCore', 'PySide6.QtWebEngineWidgets', 'PySide6.QtWebEngineQuick'])
 pyz = PYZ(analysis.pure)
 exe = EXE(pyz, analysis.scripts, [], exclude_binaries=True, name='OGEChecker',
           console=False, debug=False, strip=False, upx=False)

@@ -25,93 +25,66 @@ def add_row(sheet, values):
 
 
 def workbook(data, metrics, destination):
-    try:
-        from openpyxl import Workbook
-        from openpyxl.styles import Font, PatternFill, Alignment
-        from openpyxl.utils import get_column_letter
-    except ImportError:
-        raise ValueError('Установите экспорт: .venv/bin/python -m pip install -e ".[export]"') from None
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from openpyxl.utils import get_column_letter
+    from .grading import grade_page
     book = Workbook()
-    students = book.active
-    students.title = 'Ученики'
-    details = book.create_sheet('Поля')
-    errors = book.create_sheet('Ошибки OCR')
-    replacements = book.create_sheet('Проверка замен')
-    info = book.create_sheet('Сведения')
-    add_row(students, ['Страница', 'Фамилия', 'Имя', 'Отчество', 'Класс'] +
-            [f'Ответ {number}' for number in range(1, 20)] +
-            ['Ручных отметок из старых данных', 'Всего полей', 'Статус расшифровки', 'Блок замены', 'Вариант', 'Баллы', 'Статус оценивания', 'Исходный скан',
-             'Предварительный балл', 'Максимум', 'Демонстрационные ключи', 'Причина пропуска', 'Способ выравнивания'])
-    add_row(details, ['Страница', 'Поле', 'Текст OCR', 'Кандидат', 'Используемое значение',
-                      'Ручная отметка из старых данных', 'Уверенность OCR', 'Изменено правилом', 'Фрагмент скана'])
-    add_row(errors, ['Поле', 'Кандидат OCR', 'Ручная расшифровка'])
-    add_row(replacements, ['Страница', 'Изображение блока', 'Статус', 'Применённые замены'])
-    add_row(info, ['Параметр', 'Значение'])
-    scores = book.create_sheet('Проверка ответов')
-    add_row(scores, ['Страница', 'Вариант', 'Задание', 'Ответ', 'Источник ответа', 'Ключ', 'Балл', 'Максимум', 'Результат', 'ДЕМО', 'Предупреждения'])
+    sheet = book.active
+    sheet.title = 'Результаты'
+    key = data.get('answer_key')
+    numbers = sorted({int(n) for tasks in key['variants'].values() for n in tasks} if key else
+                     {int(f['name'][7:]) for p in data['pages'] for f in p['fields'] if f['name'].startswith('answer_')})
+    add_row(sheet, ['ФИО'] + numbers + ['Сумма баллов', 'Оценка'])
+    statistics = {n: {'correct': 0, 'assigned': 0} for n in numbers}
+    totals, marks = [], []
     for page in data['pages']:
-        by_name = {field['name']: field for field in page['fields']}
-        def confirmed(name):
-            if name.startswith('answer_'):
-                return effective_answer(page, int(name[7:]))[0]
-            return field_value(by_name.get(name))
-        reviewed = sum(field['reviewed'] for field in page['fields'])
-        complete = len(by_name) == 23 and page['status'] == 'prepared'
-        grading = page.get('grading', {})
-        replacement_status = '; '.join(page.get('replacement_warnings', [])) or 'Автоматически / ручные правки'
-        add_row(students, [page['page']] + [confirmed(name) for name in
-                ['surname', 'first_name', 'patronymic', 'class']] +
-                [confirmed(f'answer_{number:02}') for number in range(1, 20)] +
-                [reviewed, len(by_name), 'Обработана автоматически' if complete else 'Ошибка подготовки',
-                 replacement_status, grading.get('variant'), grading.get('total'),
-                 grading.get('status', 'Не выполнено: нужны ключи, варианты и проверка замен'), page.get('original'),
-                 grading.get('provisional'), grading.get('maximum'), 'Да' if grading.get('demo') else 'Нет',
-                 page.get('error'),(page.get('alignment') or {}).get('method')])
-        add_row(replacements, [page['page'], page.get('replacements'), replacement_status,
-                              json.dumps({'manual': page.get('replacement_answers', {}), 'ocr': page.get('automatic_replacements', {})}, ensure_ascii=False)])
-        for task in grading.get('tasks', []):
-            add_row(scores, [page['page'], grading['variant'], task['number'], task['answer'], task['source'],
-                             ' / '.join(task['accepted']), task['points'], task['maximum'], task['status'],
-                             'Да' if grading['demo'] else 'Нет', '; '.join(task.get('warnings', []))])
-        for field in page['fields']:
-            add_row(details, [page['page'], field['label'], field['raw_text'], field['candidate'],
-                              field_value(field),
-                              'Да' if field['reviewed'] else 'Нет', field['confidence'],
-                              ', '.join(item['rule'] for item in field.get('adjustments', [])), field['original']])
-    for mismatch in metrics['mismatches']:
-        add_row(errors, [mismatch['id'], mismatch['ocr'], mismatch['expected']])
-    for key, value in [
-        ('Содержание', 'Расшифровка и проверка кратких ответов 1–19; развёрнутые решения не оцениваются'),
-        ('Ключи', data.get('answer_key', {}).get('title', 'Не загружены')),
-        ('ДЕМО', 'Случайные ответы! Баллы не являются результатами ОГЭ.' if data.get('answer_key', {}).get('demo') else 'Нет'),
-        ('Страниц', len(data['pages'])),
-        ('Подтверждено полей', metrics['reviewed_fields']),
-        ('Точно распознано до ручных правок', metrics['matching_fields']),
-        ('Доля точных совпадений', metrics['exact_match_rate']),
-        ('Ограничение метрики', 'OCR сравнивается с ручными правками. Это не точность выставления баллов.'),
-        ('Блок замены', 'Однозначные замены применяются автоматически; конфликты помечаются'),
-        ('Пустые значения', 'Распознанное пустое поле даёт 0; техническая ошибка обработки не считается пустым ответом'),
-        ('Ручные правки', 'Сохранены дословно; регистр и смешение алфавитов не исправлялись'),
-        ('Источник', data['source_manifest']),
-    ]:
-        add_row(info, [key, value])
-    if not metrics['reviewed_fields']:
-        add_row(info, ['Точность OCR', 'Не измерена: эталонная расшифровка не загружена'])
-    for group, stats in metrics.get('groups', {}).items():
-        add_row(info, [f'Точность OCR / {group}', stats['exact_match_rate']])
-        add_row(info, [f'CER / {group}', stats['cer']])
-    for sheet in book:
-        sheet.freeze_panes = 'A2'
-        sheet.auto_filter.ref = sheet.dimensions
-        for cell in sheet[1]:
-            cell.font = Font(bold=True, color='FFFFFF')
-            cell.fill = PatternFill('solid', fgColor='254A70')
-        for column in sheet.columns:
-            width = min(55, max(12, max(len(str(cell.value or '')) for cell in column) + 2))
-            sheet.column_dimensions[get_column_letter(column[0].column)].width = width
-        for row in sheet.iter_rows(min_row=2):
-            for cell in row:
-                cell.alignment = Alignment(vertical='top', wrap_text=True)
+        values = {f['name']: field_value(f) or '' for f in page['fields']}
+        name = ' '.join(values.get(part, '') for part in ('surname', 'first_name', 'patronymic')).strip()
+        score = grade_page(page, key) if key else {}
+        task_results = {t['number']: t for t in score.get('tasks', [])}
+        variant = page.get('variant') or (key or {}).get('default_variant')
+        assigned = (key or {}).get('variants', {}).get(variant, {})
+        for n in numbers:
+            if str(n) in assigned:
+                statistics[n]['assigned'] += 1
+            task = task_results.get(n)
+            if task and task['points'] is not None and task['points'] == task['maximum']:
+                statistics[n]['correct'] += 1
+        add_row(sheet, [name] + [task_results.get(n, {}).get('points') for n in numbers] +
+                [score.get('total'), score.get('grade')])
+        if score.get('total') is not None:
+            totals.append(score['total'])
+        if score.get('grade') is not None:
+            marks.append(score['grade'])
+    student_end = sheet.max_row
+    sheet.append([])
+    add_row(sheet, ['Решили полностью, чел.'] + [statistics[n]['correct'] for n in numbers])
+    add_row(sheet, ['Решили полностью, %'] +
+            [statistics[n]['correct']/statistics[n]['assigned'] if statistics[n]['assigned'] else None for n in numbers])
+    for cell in list(sheet.rows)[-1][1:len(numbers)+1]:
+        cell.number_format = '0.00%'
+    sheet.append([])
+    add_row(sheet, ['Сводка', 'Значение'])
+    for grade in (2, 3, 4, 5):
+        add_row(sheet, [f'Оценка {grade}', marks.count(grade)])
+    add_row(sheet, ['Средний балл за работу', sum(totals)/len(totals) if totals else None])
+    sheet.cell(sheet.max_row, 2).number_format = '0.00'
+    add_row(sheet, ['Средняя оценка', sum(marks)/len(marks) if marks else None])
+    sheet.cell(sheet.max_row, 2).number_format = '0.00'
+    sheet.freeze_panes = 'B2'
+    sheet.auto_filter.ref = f'A1:{get_column_letter(len(numbers)+3)}{student_end}'
+    for cell in sheet[1]:
+        cell.font = Font(bold=True, color='FFFFFF')
+        cell.fill = PatternFill('solid', fgColor='713DC5')
+    for row in sheet:
+        for cell in row:
+            cell.alignment = Alignment(vertical='center', wrap_text=True, horizontal='left' if cell.column == 1 else 'center')
+    sheet.column_dimensions['A'].width = 38
+    for col in range(2, len(numbers)+2):
+        sheet.column_dimensions[get_column_letter(col)].width = 9
+    for col in (len(numbers)+2, len(numbers)+3):
+        sheet.column_dimensions[get_column_letter(col)].width = 18
     book.save(destination)
 
 

@@ -59,10 +59,6 @@ def key_from_rows(rows, title='Ключи ответов'):
             tasks[number] = {'accepted': accepted, 'points': int(points)}
         except ValueError as exc:
             raise ValueError(f'Строка {index}: {exc}') from exc
-    for variant, tasks in variants.items():
-        missing = sorted(set(map(str, range(1, 20))) - set(tasks), key=int)
-        if missing:
-            raise ValueError(f'Вариант {variant}: отсутствуют задания {", ".join(missing)}')
     key = {'schema_version': 1, 'demo': False, 'title': title, 'variants': variants}
     if len(variants) == 1:
         key['default_variant'] = next(iter(variants))

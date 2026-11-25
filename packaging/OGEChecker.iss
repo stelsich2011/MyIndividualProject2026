@@ -1,8 +1,9 @@
-#define AppVersion "0.6.0"
+#define AppVersion "0.8.0"
 [Setup]
 AppId={{5E98F298-9E0D-41C2-B11E-9ADB09F07A75}
 AppName=Проверка бланков ОГЭ
 AppVersion={#AppVersion}
+AppVerName=Проверка бланков ОГЭ Beta-0.8.0
 DefaultDirName={localappdata}\Programs\OGEChecker
 DefaultGroupName=Проверка бланков ОГЭ
 PrivilegesRequired=lowest

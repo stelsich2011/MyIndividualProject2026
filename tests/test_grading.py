@@ -84,7 +84,7 @@ class GradingTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_key(invalid)
         invalid = all_sevens_key()
-        del invalid['variants']['demo']['19']
+        invalid['variants']['demo']['20'] = invalid['variants']['demo'].pop('19')
         with self.assertRaises(ValueError):
             validate_key(invalid)
         for text in ['0=7', '20=7', '1=7\n01=8', '1:7']:

@@ -21,8 +21,8 @@ def validate_key(key):
     if not isinstance(variants, dict) or not variants:
         raise ValueError('В ключе отсутствуют варианты')
     for variant, tasks in variants.items():
-        if not isinstance(variant, str) or not isinstance(tasks, dict) or set(tasks) != {str(i) for i in range(1, 20)}:
-            raise ValueError('Каждый вариант должен содержать задания 1–19')
+        if not isinstance(variant, str) or not variant.strip() or not isinstance(tasks, dict) or not tasks or any(not isinstance(n, str) or not n.isdecimal() or str(int(n)) != n or not 1 <= int(n) <= 19 for n in tasks):
+            raise ValueError('Вариант должен содержать выбранные задания с номерами 1–19')
         for task in tasks.values():
             if not isinstance(task, dict):
                 raise ValueError('Неверный формат задания')
@@ -31,6 +31,17 @@ def validate_key(key):
                 raise ValueError('accepted должен содержать непустые строковые ответы')
             if type(points) is not int or not 1 <= points <= 100:
                 raise ValueError('points должен быть целым числом от 1 до 100')
+            from .answer_formats import validate_format, format_error
+            validate_format(task.get('format', {}))
+            for value in accepted:
+                issue = format_error(value, task.get('format'))
+                if issue:
+                    raise ValueError(issue)
+            if task.get('scoring', 'exact') not in ('exact', 'positional', 'unordered', 'set'):
+                raise ValueError('Неизвестное правило начисления баллов')
+    if key.get('subject'):
+        from .subjects import subject
+        subject(key['subject'])
     if key.get('default_variant') is not None and key['default_variant'] not in variants:
         raise ValueError('default_variant отсутствует в variants')
     return key
@@ -63,7 +74,7 @@ def grade_page(page, key):
         return base
     tasks = key['variants'][variant]
     changes = page.get('replacement_answers', {})
-    if not isinstance(changes, dict) or any(str(k) not in tasks or not isinstance(v, str) for k, v in changes.items()):
+    if not isinstance(changes, dict) or any(not str(k).isdecimal() or not 1 <= int(k) <= 19 or not isinstance(v, str) for k, v in changes.items()):
         raise ValueError(f'Неверный блок замен страницы {page["page"]}')
     earned, ready = 0, 0
     alerts = list(page.get('replacement_warnings', []))
@@ -79,10 +90,15 @@ def grade_page(page, key):
         status = 'Ошибка обработки'
         if confirmed:
             ready += 1
-            match = normalize(value) in {normalize(answer) for answer in task['accepted']}
-            points = task['points'] if match else 0
+            points = task_points(value, task)
+            match = points == task['points']
+            from .answer_formats import format_error
+            issue = format_error(value, task.get('format'))
+            if issue:
+                issues.append(issue)
+                alerts.append(f'Задание {number}: {issue}')
             earned += points
-            status = 'Верно' if match else ('Нет ответа' if not normalize(value) else 'Неверно')
+            status = 'Верно' if match else ('Частично верно' if points else ('Нет ответа' if not normalize(value) else 'Неверно'))
         base['tasks'].append({'number': int(number), 'answer': value, 'source': source,
                               'accepted': task['accepted'], 'points': points,
                               'maximum': task['points'], 'status': status, 'warnings': issues})
@@ -91,15 +107,39 @@ def grade_page(page, key):
     base['provisional'] = earned if ready else None
     if page.get('status') != 'prepared':
         base['status'] = 'Нужна проверка подготовки скана'
-    elif ready != 19:
-        base['status'] = f'Обработано ответов {ready}/19'
+    elif ready != len(tasks):
+        base['status'] = f'Обработано ответов {ready}/{len(tasks)}'
     else:
         base['total'] = earned
         base['status'] = 'Автоматически: есть сомнения' if alerts else 'Проверено автоматически'
     base['warnings'] = alerts
+    from .subjects import school_grade
+    base['grade'] = school_grade(base, key, page)
     if key['demo']:
         base['status'] = 'ДЕМО — ' + base['status']
     return base
+
+
+def task_points(value, task):
+    from collections import Counter
+    from .answer_formats import format_error
+    value = normalize(value)
+    if not value or format_error(value, task.get('format')):
+        return 0
+    result = 0
+    for answer in task['accepted']:
+        answer = normalize(answer)
+        rule = task.get('scoring', 'exact')
+        if value == answer or rule in ('unordered', 'set') and Counter(value) == Counter(answer):
+            return task['points']
+        partial = False
+        if rule == 'positional' and len(value) == len(answer):
+            partial = sum(a != b for a, b in zip(value, answer)) == 1
+        if rule == 'set' and len(value) <= len(answer):
+            partial = max(sum((Counter(value)-Counter(answer)).values()), sum((Counter(answer)-Counter(value)).values())) == 1
+        if partial:
+            result = max(result, min(1, task['points']-1))
+    return result
 
 
 def grade_data(data, key):

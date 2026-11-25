@@ -138,7 +138,7 @@ button{padding:12px;font:inherit}header{position:sticky;top:0;background:#f3f5f7
         f'<script id="data" type="application/json">{payload}</script><script>{script}</script></html>', encoding='utf-8')
 
 
-def recognize(prepared, output, engine=None, corrections=None, restore_decimals=True):
+def recognize(prepared, output, engine=None, corrections=None, restore_decimals=True, answer_key=None, progress=None):
     prepared, output = prepared.resolve(), output.resolve()
     manifest_path = prepared / 'manifest.json'
     manifest_bytes = manifest_path.read_bytes()
@@ -148,12 +148,18 @@ def recognize(prepared, output, engine=None, corrections=None, restore_decimals=
     if output.exists() and any(output.iterdir()):
         raise ValueError('Папка OCR должна быть пустой; укажите новую --output')
     engine = engine or LocalOCR()
+    if answer_key is not None:
+        from .grading import validate_key
+        validate_key(answer_key)
     output.mkdir(parents=True, exist_ok=True)
     data = {'schema_version': 1, 'source_id': hashlib.sha256(manifest_bytes).hexdigest(),
             'source_manifest': str(manifest_path), 'engine': f'RapidOCR / {getattr(engine, "profile", "custom")}',
             'postprocessing': ('visible_strokes_v1+decimal_geometry_v2' if restore_decimals else 'none') + ('+cell_classifier_v1' if getattr(engine,'numeric',None) is not None else ''),
             'numeric_model': 'oge_digits_hog_svm_v1' if getattr(engine,'numeric',None) is not None else None,
             'run_status': 'running', 'pages': []}
+    if answer_key:
+        from copy import deepcopy
+        data['answer_key'] = deepcopy(answer_key)
     for page in manifest['pages']:
         number = page['page']
         result = {'page': number, 'status': page['status'], 'fields': [], 'field_alignment':page.get('field_alignment'),
@@ -162,6 +168,10 @@ def recognize(prepared, output, engine=None, corrections=None, restore_decimals=
             result['original']=relative(prepared / page['original'], output)
         if page.get('error'):
             result['error']=page['error']
+        variant = page.get('variant') or (answer_key or {}).get('default_variant')
+        if variant:
+            result['variant'] = variant
+        tasks = (answer_key or {}).get('variants', {}).get(variant, {})
         if page['status'] == 'prepared':
             folder = output / f'page_{number:03}'
             folder.mkdir()
@@ -253,6 +263,19 @@ def recognize(prepared, output, engine=None, corrections=None, restore_decimals=
                             ocr_error = None
                     except Exception as exc:
                         field_warnings.append(f'Клеточный OCR недоступен для поля: {exc}')
+                spec = tasks.get(str(int(name[7:])), {}).get('format') if name.startswith('answer_') else None
+                if spec and not empty:
+                    from .answer_formats import constrained_read, format_error
+                    try:
+                        improved = constrained_read(value, cleaned, spec, engine.read, numeric_result)
+                        if improved != value:
+                            adjustments.append(dict(rule='answer_format_consensus_v1', before=value, after=improved))
+                            value = improved
+                        issue = format_error(value, spec)
+                        if issue:
+                            field_warnings.append(issue)
+                    except Exception as exc:
+                        field_warnings.append(f'Проверка формата: {exc}')
                 result['fields'].append({
                     'id': f'{number}:{name}', 'name': name,
                     'label': f'Ответ {int(name[7:])}' if name.startswith('answer_') else
@@ -271,6 +294,8 @@ def recognize(prepared, output, engine=None, corrections=None, restore_decimals=
         data['pages'].append(result)
         (output / 'recognition.json').write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding='utf-8')
         print(f'Пробное OCR страницы {number} завершено', flush=True)
+        if progress:
+            progress(len(data['pages']), len(manifest['pages']))
     data['run_status'] = 'complete'
     data['processing_summary']={'pages':len(data['pages']),
         'prepared':sum(p['status']=='prepared' for p in data['pages']),

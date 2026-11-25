@@ -14,7 +14,7 @@ def main():
     destination=destination.resolve()
     destination.parent.mkdir(parents=True,exist_ok=True)
     files=[root/name for name in ('README.md','THIRD_PARTY.md','pyproject.toml','.gitignore','.gitattributes','.editorconfig','run_windows.bat','run_linux.sh','data/README.md')]
-    allowed={'.py','.js','.json','.onnx','.xml','.npz','.md','.toml','.yml','.spec','.iss','.ps1','.txt','.csv','.xlsx','.png'}
+    allowed={'.py','.qml','.js','.json','.onnx','.xml','.npz','.md','.toml','.yml','.spec','.iss','.ps1','.txt','.csv','.xlsx','.png'}
     for directory in ('src','tests','scripts','packaging','examples','docs','.github'):
         files.extend(p for p in (root/directory).rglob('*') if p.is_file() and p.suffix in allowed and '__pycache__' not in p.parts and not any(part.endswith('.egg-info') for part in p.parts))
     with zipfile.ZipFile(destination,'w',compression=zipfile.ZIP_DEFLATED) as archive:

@@ -1,0 +1,785 @@
+{
+  "version": 1,
+  "year": 2026,
+  "subjects": {
+    "math": {
+      "name": "Математика",
+      "year": 2026,
+      "full_maximum": 31,
+      "full_task_count": 25,
+      "grade_thresholds": {
+        "3": 8,
+        "4": 15,
+        "5": 22
+      },
+      "scale_source": "https://doc.fipi.ru/oge/normativno-pravovye-dokumenty/02-20_25.02.2026.pdf",
+      "specification_source": "https://doc.fipi.ru/oge/demoversii-specifikacii-kodifikatory/2026/ma_9_2026.zip",
+      "tasks": {
+        "1": {
+          "points": 1,
+          "format": {
+            "type": "decimal",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "2": {
+          "points": 1,
+          "format": {
+            "type": "decimal",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "3": {
+          "points": 1,
+          "format": {
+            "type": "decimal",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "4": {
+          "points": 1,
+          "format": {
+            "type": "decimal",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "5": {
+          "points": 1,
+          "format": {
+            "type": "decimal",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "6": {
+          "points": 1,
+          "format": {
+            "type": "decimal",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "7": {
+          "points": 1,
+          "format": {
+            "type": "decimal",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "8": {
+          "points": 1,
+          "format": {
+            "type": "decimal",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "9": {
+          "points": 1,
+          "format": {
+            "type": "decimal",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "10": {
+          "points": 1,
+          "format": {
+            "type": "decimal",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "11": {
+          "points": 1,
+          "format": {
+            "type": "decimal",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "12": {
+          "points": 1,
+          "format": {
+            "type": "decimal",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "13": {
+          "points": 1,
+          "format": {
+            "type": "decimal",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "14": {
+          "points": 1,
+          "format": {
+            "type": "decimal",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "15": {
+          "points": 1,
+          "format": {
+            "type": "decimal",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "16": {
+          "points": 1,
+          "format": {
+            "type": "decimal",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "17": {
+          "points": 1,
+          "format": {
+            "type": "decimal",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "18": {
+          "points": 1,
+          "format": {
+            "type": "decimal",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "19": {
+          "points": 1,
+          "format": {
+            "type": "decimal",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        }
+      },
+      "geometry_tasks": [
+        15,
+        16,
+        17,
+        18,
+        19,
+        23,
+        24,
+        25
+      ]
+    },
+    "russian": {
+      "name": "Русский язык",
+      "year": 2026,
+      "full_maximum": 37,
+      "full_task_count": 13,
+      "grade_thresholds": {
+        "3": 15,
+        "4": 26,
+        "5": 33
+      },
+      "scale_source": "https://doc.fipi.ru/oge/normativno-pravovye-dokumenty/02-20_25.02.2026.pdf",
+      "specification_source": "https://doc.fipi.ru/oge/demoversii-specifikacii-kodifikatory/2026/ru_9_2026.zip",
+      "tasks": {
+        "2": {
+          "points": 1,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "unordered"
+        },
+        "3": {
+          "points": 1,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "unordered"
+        },
+        "4": {
+          "points": 1,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "5": {
+          "points": 1,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "unordered"
+        },
+        "6": {
+          "points": 1,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "unordered"
+        },
+        "7": {
+          "points": 1,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "unordered"
+        },
+        "8": {
+          "points": 1,
+          "format": {
+            "type": "cyrillic",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "9": {
+          "points": 1,
+          "format": {
+            "type": "cyrillic",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "10": {
+          "points": 1,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "unordered"
+        },
+        "11": {
+          "points": 1,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "unordered"
+        },
+        "12": {
+          "points": 1,
+          "format": {
+            "type": "cyrillic",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        }
+      },
+      "literacy_required": true
+    },
+    "physics": {
+      "name": "Физика",
+      "year": 2026,
+      "full_maximum": 39,
+      "full_task_count": 22,
+      "grade_thresholds": {
+        "3": 10,
+        "4": 20,
+        "5": 30
+      },
+      "scale_source": "https://doc.fipi.ru/oge/normativno-pravovye-dokumenty/02-20_25.02.2026.pdf",
+      "specification_source": "https://doc.fipi.ru/oge/demoversii-specifikacii-kodifikatory/2026/fi_9_2026.zip",
+      "tasks": {
+        "1": {
+          "points": 2,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "positional"
+        },
+        "2": {
+          "points": 2,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "positional"
+        },
+        "3": {
+          "points": 1,
+          "format": {
+            "type": "decimal",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "4": {
+          "points": 2,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "positional"
+        },
+        "5": {
+          "points": 1,
+          "format": {
+            "type": "decimal",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "6": {
+          "points": 1,
+          "format": {
+            "type": "decimal",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "7": {
+          "points": 1,
+          "format": {
+            "type": "decimal",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "8": {
+          "points": 1,
+          "format": {
+            "type": "decimal",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "9": {
+          "points": 1,
+          "format": {
+            "type": "decimal",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "10": {
+          "points": 1,
+          "format": {
+            "type": "decimal",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "11": {
+          "points": 1,
+          "format": {
+            "type": "decimal",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "12": {
+          "points": 2,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "positional"
+        },
+        "13": {
+          "points": 2,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "positional"
+        },
+        "14": {
+          "points": 2,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "set"
+        },
+        "15": {
+          "points": 1,
+          "format": {
+            "type": "decimal",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "16": {
+          "points": 2,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "set"
+        }
+      }
+    },
+    "chemistry": {
+      "name": "Химия",
+      "year": 2026,
+      "full_maximum": 38,
+      "full_task_count": 23,
+      "grade_thresholds": {
+        "3": 10,
+        "4": 21,
+        "5": 31
+      },
+      "scale_source": "https://doc.fipi.ru/oge/normativno-pravovye-dokumenty/02-20_25.02.2026.pdf",
+      "specification_source": "https://doc.fipi.ru/oge/demoversii-specifikacii-kodifikatory/2026/hi_9_2026.zip",
+      "tasks": {
+        "1": {
+          "points": 1,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "2": {
+          "points": 1,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "3": {
+          "points": 1,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "4": {
+          "points": 2,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "positional"
+        },
+        "5": {
+          "points": 1,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "6": {
+          "points": 1,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "7": {
+          "points": 1,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "8": {
+          "points": 1,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "9": {
+          "points": 2,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "positional"
+        },
+        "10": {
+          "points": 2,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "positional"
+        },
+        "11": {
+          "points": 1,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "12": {
+          "points": 2,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "positional"
+        },
+        "13": {
+          "points": 1,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "14": {
+          "points": 1,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "15": {
+          "points": 1,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "16": {
+          "points": 1,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "17": {
+          "points": 2,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "positional"
+        },
+        "18": {
+          "points": 1,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "19": {
+          "points": 1,
+          "format": {
+            "type": "digits",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        }
+      }
+    },
+    "informatics": {
+      "name": "Информатика",
+      "year": 2026,
+      "full_maximum": 21,
+      "full_task_count": 16,
+      "grade_thresholds": {
+        "3": 5,
+        "4": 11,
+        "5": 17
+      },
+      "scale_source": "https://doc.fipi.ru/oge/normativno-pravovye-dokumenty/02-20_25.02.2026.pdf",
+      "specification_source": "https://doc.fipi.ru/oge/demoversii-specifikacii-kodifikatory/2026/inf_9_2026.zip",
+      "tasks": {
+        "1": {
+          "points": 1,
+          "format": {
+            "type": "mixed",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "2": {
+          "points": 1,
+          "format": {
+            "type": "mixed",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "3": {
+          "points": 1,
+          "format": {
+            "type": "mixed",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "4": {
+          "points": 1,
+          "format": {
+            "type": "mixed",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "5": {
+          "points": 1,
+          "format": {
+            "type": "mixed",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "6": {
+          "points": 1,
+          "format": {
+            "type": "mixed",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "7": {
+          "points": 1,
+          "format": {
+            "type": "mixed",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "8": {
+          "points": 1,
+          "format": {
+            "type": "mixed",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "9": {
+          "points": 1,
+          "format": {
+            "type": "mixed",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "10": {
+          "points": 1,
+          "format": {
+            "type": "mixed",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "11": {
+          "points": 1,
+          "format": {
+            "type": "mixed",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        },
+        "12": {
+          "points": 1,
+          "format": {
+            "type": "mixed",
+            "min_length": 0,
+            "max_length": 0
+          },
+          "scoring": "exact"
+        }
+      }
+    }
+  }
+}

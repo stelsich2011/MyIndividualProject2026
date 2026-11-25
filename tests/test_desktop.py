@@ -1,159 +1,210 @@
-
 import os
+os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
+
 from pathlib import Path
 import tempfile
 import time
+from threading import Event
 import unittest
 from unittest.mock import patch
 
-try:
-    import tkinter as tk
-    from oge_checker.desktop import DesktopApp
-except ImportError:
-    tk = None
-
+from PySide6.QtCore import QObject, QSettings
+from PySide6.QtQuickControls2 import QQuickStyle
+from PySide6.QtWidgets import QApplication, QMessageBox
+from oge_checker.qt_backend import Backend
+from oge_checker.desktop import create_window
 from oge_checker.session import Session
 from test_grading import complete_data, all_sevens_key
 
+QQuickStyle.setStyle('Basic')
+app = QApplication.instance() or QApplication([])
 
-@unittest.skipUnless(tk is not None and (os.name == 'nt' or os.environ.get('DISPLAY')), 'Нужен графический экран')
+
 class DesktopTests(unittest.TestCase):
+    def wait_worker(self):
+        deadline = time.monotonic() + 10
+        while self.backend.busy and time.monotonic() < deadline:
+            app.processEvents()
+            time.sleep(.005)
+        self.backend.worker.wait(10000)
+        app.processEvents()
+        self.assertFalse(self.backend.busy)
+        self.assertFalse(self.errors)
+
     def setUp(self):
+        settings_folder = tempfile.TemporaryDirectory()
+        self.addCleanup(settings_folder.cleanup)
+        self.backend = Backend(QSettings(str(Path(settings_folder.name) / 'settings.ini'), QSettings.IniFormat))
+        self.backend.session = Session(complete_data(), Path('.'))
+        self.backend.session.set_key(all_sevens_key())
+        self.backend.page_number = 1
+        self.backend.refresh()
+        self.errors = []
+        self.backend.error.connect(self.errors.append)
+
+    def test_qml_window_and_controls_load(self):
+        engine = create_window(app, self.backend)
+        app.processEvents()
+        root = engine.rootObjects()[0]
+        self.assertEqual(root.objectName(), 'mainWindow')
+        self.assertIsNotNone(root.findChild(QObject, 'answerEditor'))
+        self.assertIsNotNone(root.findChild(QObject, 'pagesList'))
+        self.assertIsNotNone(root.findChild(QObject, 'resultsList'))
+        self.backend.session.dirty = False
+        root.close()
+        engine.deleteLater()
+        app.processEvents()
+
+    def test_edit_recalculates_and_next_field(self):
+        self.backend.editField('8')
+        self.assertEqual(self.backend.state['results'][0]['total'], '18')
+        self.assertEqual(self.backend.session.data['pages'][0]['fields'][0]['corrected_text'], '8')
+        self.backend.nextField()
+        self.assertEqual(self.backend.field_id, '1:answer_02')
+
+    def test_replacements_validate_before_application(self):
+        self.backend.applyReplacements('1=8')
+        self.assertEqual(self.backend.state['results'][0]['total'], '18')
+        self.backend.applyReplacements('bad input')
+        self.assertTrue(self.errors)
+        self.assertEqual(self.backend.page()['replacement_answers'], {'1': '8'})
+
+    def test_key_editor_round_trip_and_variants(self):
+        self.backend.beginKeys()
+        self.backend.editKeyCell(0, 'answer', '007|-0,5')
+        self.assertTrue(self.backend.applyKeys(False))
+        self.assertEqual(self.backend.session.key['variants']['demo']['1']['accepted'], ['007', '-0,5'])
+        self.assertTrue(self.backend.session.key['demo'])
+        self.backend.addVariant('2')
+        self.assertEqual(len(self.backend.key_rows), 38)
+        self.backend.removeVariant('2')
+        self.assertEqual(len(self.backend.key_rows), 19)
+
+    def test_save_cancel_and_close_cancel_preserve_dirty(self):
+        with patch('oge_checker.qt_backend.QFileDialog.getSaveFileName', return_value=('', '')):
+            self.assertFalse(self.backend.saveProject())
+            self.assertTrue(self.backend.session.dirty)
+        with patch('oge_checker.qt_backend.QMessageBox.question', return_value=QMessageBox.Cancel):
+            self.assertFalse(self.backend.canLeave())
+
+    def test_project_save_reopen_and_excel(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / 'project.json'
+            self.backend.editField('007')
+            with patch('oge_checker.qt_backend.QFileDialog.getSaveFileName', return_value=(str(path), '')):
+                self.assertTrue(self.backend.saveProject())
+            self.wait_worker()
+            other = Backend()
+            self.assertTrue(other.openPath(str(path)))
+            self.assertEqual(other.state['selected']['value'], '007')
+            other.session.export_excel(Path(temp) / 'results.xlsx')
+            self.assertTrue((Path(temp) / 'results.xlsx').is_file())
+
+    def test_subject_variants_count_and_format_validation(self):
+        self.backend.beginKeys()
+        self.backend.editKeyCell(0, 'answer', '007')
+        self.backend.setTaskCount(10)
+        self.backend.setTaskCount(11)
+        self.assertEqual(self.backend.keySummary['count'], 11)
+        self.assertEqual(self.backend.keyVisibleRows[0]['answer'], '007')
+        self.backend.addVariant('2')
+        self.backend.setTaskCount(10)
+        self.backend.selectKeyVariant('demo')
+        self.assertEqual(self.backend.keySummary['count'], 11)
+        for index, row in enumerate(self.backend.key_rows):
+            if not row['answer']:
+                self.backend.editKeyCell(index, 'answer', '7')
+        self.assertTrue(self.backend.applyKeys(False))
+        self.backend.setVariant('demo', False)
+        self.assertEqual(self.backend.format_for('answer_01')['type'], 'mixed')
+        self.backend.session.key['variants']['demo']['1']['format'] = dict(type='digits', max_length=2)
+        self.backend.editField('А07')
+        self.assertIn('Ожидается', self.backend.state['selected']['warning'])
+        self.backend.beginKeys()
+        self.backend.selectKeySubject('chemistry')
+        self.assertEqual(self.backend.keyVisibleRows[0]['answer'], '007')
+        self.assertEqual(self.backend.keyVisibleRows[0]['type'], 'digits')
+        self.assertEqual(self.backend.keySummary['fullMaximum'], 38)
+
+    def test_progress_theme_duplicates_and_error_recovery(self):
+        engine = create_window(app, self.backend)
+        root = engine.rootObjects()[0]
+        progress = root.findChild(QObject, 'progressWindow')
+        self.assertIsNotNone(progress)
+        released = Event()
         try:
-            self.root = tk.Tk()
-        except tk.TclError:
-            self.skipTest('Графический экран недоступен')
-        self.errors = patch('oge_checker.desktop.messagebox.showerror', side_effect=AssertionError('GUI error'))
-        self.errors.start()
-        self.app = DesktopApp(self.root)
-        self.app.session = Session(complete_data(), Path('.'))
-        self.app.session.set_key(all_sevens_key())
-        self.app._refresh_pages()
-        self.app.pages.selection_set('1')
-        self.root.update()
+            self.assertTrue(self.backend.run_operation('test', 'Проверка…', lambda: released.wait(10)))
+            app.processEvents()
+            self.assertTrue(progress.property('visible'))
+            self.assertEqual(progress.property('color'), root.property('surfaceColor'))
+            self.assertFalse(self.backend.run_operation('test', 'Дубль', lambda: self.fail('Duplicate operation')))
+            self.backend.setDarkTheme(not self.backend.darkTheme)
+            app.processEvents()
+            self.assertEqual(progress.property('color'), root.property('surfaceColor'))
+        finally:
+            released.set()
+            self.wait_worker()
+            self.backend.session.dirty = False
+            root.close()
+            engine.deleteLater()
+            app.processEvents()
+        def fail():
+            raise ValueError('Ошибка экспорта')
+        self.backend.run_operation('export', 'Excel…', fail)
+        self.backend.worker.wait(10000)
+        app.processEvents()
+        self.assertFalse(self.backend.busy)
+        self.assertEqual(self.errors, ['Ошибка экспорта'])
 
-    def tearDown(self):
-        self.errors.stop()
-        if hasattr(self, 'root'):
-            self.app.shutdown()
+    def test_failed_page_retains_reason(self):
+        self.backend.session.data['pages'].append(dict(page=36, status='needs_review', fields=[], error='Missing markers'))
+        self.backend.selectPage(36)
+        self.assertEqual(self.backend.state['pageError'], 'Missing markers')
+        self.assertEqual(self.backend.state['results'][1]['total'], '—')
 
-    def test_edit_immediately_recalculates_and_enter_moves_without_confirmation(self):
-        field = self.app._field()
-        self.app.value.set('8')
-        self.assertFalse(field['reviewed'])
-        self.assertEqual(self.app.session.snapshot()['pages'][0]['grading']['total'], 18)
-        self.app.confirm_field()
-        self.root.update()
-        self.assertFalse(field['reviewed'])
-        self.assertEqual(self.app.current_field, '1:answer_02')
-        self.assertEqual(self.app.session.snapshot()['pages'][0]['grading']['total'], 18)
+    def test_theme_persists_without_changing_project(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = str(Path(temp) / 'settings.ini')
+            first = Backend(QSettings(path, QSettings.IniFormat))
+            self.assertTrue(first.darkTheme)
+            first.setDarkTheme(False)
+            second = Backend(QSettings(path, QSettings.IniFormat))
+            self.assertFalse(second.darkTheme)
+            second.setDarkTheme(True)
+            self.assertTrue(Backend(QSettings(path, QSettings.IniFormat)).darkTheme)
 
-    def test_failed_page_reason_without_answer_keys(self):
-        self.app.session.key=None
-        self.app.session.data['pages'].append({'page':36,'status':'needs_review','fields':[],
-            'error':'Обрезаны опорные метки','original':'missing.png'})
-        self.app._refresh_pages()
-        self.app.pages.selection_set('36')
-        self.root.update()
-        self.assertIn('Обрезаны опорные метки',self.app.field_label.cget('text'))
-        self.assertIn('Обрезаны опорные метки',self.app.page_status.cget('text'))
-        self.assertIn('36',self.app.banner.cget('text'))
+    def test_qml_reacts_to_theme_switch(self):
+        with tempfile.TemporaryDirectory() as temp:
+            backend = Backend(QSettings(str(Path(temp) / 'theme.ini'), QSettings.IniFormat))
+            engine = create_window(app, backend)
+            root = engine.rootObjects()[0]
+            app.processEvents()
+            dark = root.property('backgroundColor')
+            toggle = root.findChild(QObject, 'themeToggle')
+            self.assertIsNotNone(toggle)
+            backend.setDarkTheme(False)
+            app.processEvents()
+            self.assertNotEqual(root.property('backgroundColor'), dark)
+            backend.setDarkTheme(True)
+            app.processEvents()
+            self.assertEqual(root.property('backgroundColor'), dark)
+            root.close()
+            engine.deleteLater()
+            app.processEvents()
 
-    def test_search_filters_pages_and_clear_restores_them(self):
-        total=len(self.app.pages.get_children())
-        self.app.search.set('no-such-student-xyz')
-        self.root.update()
-        self.assertEqual(self.app.pages.get_children(),())
-        self.app.search.set('')
-        self.root.update()
-        self.assertEqual(len(self.app.pages.get_children()),total)
-        self.assertTrue(self.app.pages.winfo_ismapped())
-
-    def test_replacement_draft_survives_switching_page_and_save(self):
-        self.app.replacement_text.delete('1.0', 'end')
-        self.app.replacement_text.insert('1.0', '1=8')
-        self.root.update()
-        self.assertFalse(self.app._page()['replacements_reviewed'])
-        self.app.replacements_checked.set(True)
-        self.app._save_replacements()
-        self.assertEqual(self.app.session.snapshot()['pages'][0]['grading']['total'], 18)
-        with tempfile.TemporaryDirectory() as temporary:
-            path = Path(temporary) / 'project.json'
-            self.app.session.save(path)
-            self.assertEqual(Session.open(path).snapshot()['pages'][0]['grading']['total'], 18)
-
-    def test_open_existing_demo_project_and_render(self):
-        project = Path('data/processed/desktop_demo/project.json')
-        if not project.is_file():
-            self.skipTest('Демонстрационный проект ещё не создан')
-        self.app.open_path(project)
-        self.root.update()
-        self.assertEqual(len(self.app.pages.get_children()), 5)
-        self.assertEqual(len(self.app.fields.get_children()), 23)
-        self.assertTrue(self.app.session.key['demo'])
-        self.assertIn('ДЕМО', self.app.banner.cget('text'))
-        self.assertIsNotNone(self.app.photo)
-        if os.name != 'nt':
-            from PIL import ImageGrab
-            ImageGrab.grab(xdisplay=os.environ.get('DISPLAY')).save('/tmp/oge-desktop-preview.png')
-
-    def test_background_pdf_pipeline_keeps_window_responsive(self):
-        pdf = Path('data/raw/full_pdf.pdf')
-        if not pdf.is_file():
-            self.skipTest('Нет локального PDF для интеграционной проверки')
-        with tempfile.TemporaryDirectory() as temporary:
-            target = Path(temporary) / 'new_project'
-            self.app._start_worker(pdf, target, [1])
+    @unittest.skipUnless(Path('data/raw/full_pdf.pdf').exists(), 'Local dataset required')
+    def test_pdf_worker_keeps_event_loop_responsive(self):
+        with tempfile.TemporaryDirectory() as temp:
+            self.backend.start_worker(Path('data/raw/full_pdf.pdf'), Path(temp) / 'project', [1])
+            deadline = time.monotonic() + 60
             ticks = 0
-            deadline = time.monotonic() + 45
-            while self.app.busy and time.monotonic() < deadline:
-                self.root.update()
+            while self.backend.busy and time.monotonic() < deadline:
+                app.processEvents()
                 time.sleep(.01)
                 ticks += 1
-            self.assertFalse(self.app.busy, 'OCR не завершился за 45 секунд')
-            self.root.update()
+            self.backend.worker.wait(10000)
+            app.processEvents()
+            self.assertFalse(self.backend.busy)
+            self.assertFalse(self.errors)
             self.assertGreater(ticks, 2)
-            self.assertTrue((target / 'project.json').is_file())
-            self.assertEqual(len(self.app.session.data['pages']), 1)
-            self.assertEqual(len(self.app.session.data['pages'][0]['fields']), 23)
-            self.assertFalse(any(field['reviewed'] for field in self.app.session.data['pages'][0]['fields']))
-
-    def test_key_editor_preserves_leading_zero_and_demo_status(self):
-        from oge_checker.key_editor import KeyEditor
-        from oge_checker.grading import demo_key
-        key = demo_key()
-        key['variants']['demo']['1']['accepted'] = ['007', '-0,5']
-        editor = KeyEditor(self.root, lambda key: None, key)
-        try:
-            self.root.update()
-            saved = editor.build_key()
-            self.assertTrue(saved['demo'])
-            self.assertEqual(saved['variants']['demo']['1']['accepted'], ['007', '-0,5'])
-        finally:
-            editor.destroy()
-
-    def test_standalone_key_editor_and_batch_variant(self):
-        key = all_sevens_key()
-        key['variants']['other'] = key['variants']['demo'].copy()
-        self.app.apply_key(key)
-        self.app.variant.set('other')
-        self.app.set_batch_variant()
-        self.assertTrue(all(p['variant'] == 'other' for p in self.app.session.data['pages']))
-        self.app.session = None
-        self.app.apply_key(key)
-        self.assertEqual(self.app.pending_key, key)
-
-    def test_edit_without_variant_and_filter_does_not_leave_hidden_field(self):
-        key = all_sevens_key()
-        key.pop('default_variant')
-        self.app.session.set_key(key)
-        self.app.value.set('8')
-        self.assertEqual(self.app._field()['corrected_text'], '8')
-        self.assertIsNone(self.app.session.snapshot()['pages'][0]['grading']['total'])
-        for field in self.app._page()['fields']:
-            field['corrected_text'] = field['candidate']
-        self.app.suspect_only.set(True)
-        self.app._refresh_fields()
-        self.root.update()
-        self.assertIsNone(self.app.current_field)
-        self.assertEqual(self.app.value.get(), '')
+            self.assertEqual(len(self.backend.page()['fields']), 23)

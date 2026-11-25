@@ -2,7 +2,7 @@
 
 ## Установка из исходников
 
-Нужен Python 3.10+ с Tcl/Tk. Локальная сборка проверена на Windows и Python 3.14.
+Нужен Python 3.10+ с PySide6. Локальная сборка проверена на Windows и Python 3.14.
 GitHub Actions запускает тесты на Python 3.11 под Windows и Linux.
 
 ```powershell
@@ -12,8 +12,8 @@ py -3 -m venv .venv
 .venv/Scripts/python.exe -m unittest discover -s tests -q
 ```
 
-На Linux используйте `python3`, `.venv/bin/python` и установленный пакет Tcl/Tk.
-GUI-тесты без графического сеанса пропускаются. Проверки на реальных сканах
+На Linux используйте `python3` и `.venv/bin/python`. Интерфейс работает на Qt Quick.
+GUI-тесты используют платформу Qt offscreen. Проверки на реальных сканах
 пропускаются, если локальные датасеты отсутствуют. Остальные тесты используют
 синтетические данные и временные каталоги.
 
@@ -57,7 +57,7 @@ PyInstaller и создаёт `dist/installer/OGEChecker-Setup.exe`.
 .venv/Scripts/python.exe scripts/export_repository.py
 ```
 
-Полученный ZIP `dist/source/oge-checker-0.6.0-source.zip` содержит только
+Полученный ZIP `dist/source/oge-checker-0.8.0b0-source.zip` содержит только
 исходники, тесты, документацию, примеры ключей и модели. Датасеты, окружение,
 установщики и каталог `.git` не включаются. Установщик можно прикрепить
 отдельным файлом к GitHub Release.
